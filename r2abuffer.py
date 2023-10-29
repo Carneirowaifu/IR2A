@@ -27,6 +27,10 @@ class R2ABuffer(IR2A):
         self.bufferSize = 0  # Tamanho de buffer ocupado
         self.timeLastRequest = 0  # Tempo da ultima request
         self.deltaTimeLastChunk = 0  # Diferenca entre o tempo de request e response
+        self.bufferMap = []  # Mapa de tamanhos de buffer para mudanca de qualidade
+        self.bufferReserve = 37  # Tamanho de reservatorio inicial
+        self.bufferCushion = 17  # Tamanho de reservatorio de amortecimento
+        self.bufferSuperior = 6  # Tamanho de reservatorio superior
 
     def handle_xml_request(self, msg):
         self.send_down(msg)
@@ -36,6 +40,13 @@ class R2ABuffer(IR2A):
         parsed = parse_mpd(msg.get_payload())
         self.qi = parsed.get_qi()
         print(self.qi)
+
+        # Criar Mapa de Buffer
+        if len(self.qi) > 3:
+            x = (len(self.qi) - 2) / len(self.qi)
+            for i in range(1, (len(self.qi)-2)):
+                self.bufferMap.append((37 + i * x))
+        print(self.bufferMap)
         self.send_up(msg)
 
     def handle_segment_size_request(self, msg):
@@ -46,45 +57,27 @@ class R2ABuffer(IR2A):
 
         # --- LOGICA PRINCIPAL ---
 
-        # Se o tamanho de buffer for maior que 8 segundos
-
-        # Se o tempo entre request e response for menor que 4s e maior que 1s
-        if 4 > self.deltaTimeLastChunk > 1 and self.bufferSize >= 8:
-            if (self.currentQuality + 1) < len(self.qi):
-                self.currentQuality += 1  # Aumenta qualidade em 1
-
-        # Se 16 > tamanho do buffer >= 8 e o tempo entre request e response <= 1s
-        elif 16 > self.bufferSize >= 8 and self.deltaTimeLastChunk <= 1:
-            if (self.currentQuality + 2) < len(self.qi):
-                self.currentQuality += 2  # Aumenta qualidade em 2
-
-        # Se o tamanho do buffer >= 16 e o tempo entre request e response <= 1s
-        elif self.bufferSize >= 16 and self.deltaTimeLastChunk <= 1:
-            if (self.currentQuality + 3) < len(self.qi):
-                self.currentQuality += 3  # Aumenta a qualidade em 3
-
-        # Se o tempo entre request e response for menor que 5s e maior ou igual 4s
-        elif (5 > self.deltaTimeLastChunk >= 4) and self.bufferSize > 8:
-            if (self.currentQuality - 1) >= 0:
-                self.currentQuality -= 1  # Diminui qualidade em 1
-
-        # Se o tempo entre request e response for menor que 6 e maior ou igual a 5s
-        elif (6 > self.deltaTimeLastChunk >= 5) and self.bufferSize > 8:
-            if (self.currentQuality - 2) >= 0:
-                self.currentQuality -= 2  # Diminui a qualidade em 2
-
-        # Se o tempo entre request e response for maior do que 6s
-        elif self.deltaTimeLastChunk >= 6 and self.bufferSize > 8:
-            if (self.currentQuality - 3) >= 0:
-                self.currentQuality -= 3  # Diminui a qualidade em 3
-
-        # Se o tamanho de buffer for maior que 4s e menor que 8s
-        elif 4 <= self.bufferSize < 8:
-            self.currentQuality = self.currentQuality % 2  # Diminui a qualidade pela metade
-
-        # Se o tamanho de buffer for menor que 4s
-        elif self.bufferSize < 4:
-            self.currentQuality = 0  # Diminui a qualidade para 0
+        # Se o tamanho de buffer eh menor que o tamanho da reserva inicial
+        if self.bufferSize <= self.bufferReserve:
+            self.currentQuality = 0  # Qualidade de video 0
+        # Se o tamanho de buffer for maior que reserva inicial e menor que tamanho superior
+        elif self.bufferReserve < self.bufferSize < (self.bufferCushion + self.bufferReserve):
+            if len(self.bufferMap) > 1:
+                # Compara o tamanho de buffer com cada elemento do buffermap
+                for i in range(len(self.bufferMap)):
+                    if i < len(self.bufferMap):
+                        if self.bufferSize < self.bufferMap[i]:
+                            # Se o tamanho de buffer eh menor que o elemento i do bufferMap
+                            self.currentQuality = i + 1  # Qualidade de video eh i + 1
+                            break
+                    else:
+                        # Se o tamanho de buffer eh maior que todos os tamanhos no bufferMap
+                        self.currentQuality = i + 1  # Qualidade de video i + 1
+            else:
+                self.currentQuality = 1
+        # Se o tamanho de buffer for maior que reserva inicial e reserva de amortecimento
+        else:
+            self.currentQuality = len(self.qi) - 1  # Qualidade maxima
         print("QUALIDADE SELECIONADA = ", self.currentQuality)
 
         # Adiciona qualidade salva na variavel currentQuality para request
