@@ -17,9 +17,9 @@ Algoritmo utiliza a plataforma PyDash https://github.com/mfcaetano/pydash
 
 Para utilizar o algoritmo, deve-se obter a plataforma pyDash pelo link acima.
 
-Na pasta IR2A dentro da pasta da plataforma pyDash, deve-se salvar o arquivo 'r2abuffer.py' deste repositório.
+Na pasta R2A dentro da pasta da plataforma pyDash, deve-se salvar o arquivo 'r2abuffer.py', ou 'r2abuffer1' deste repositório.
 
 No arquivo dash_client.json, o campo " "r2a_algorithm": R2AFixed " deve ser mudado para " "r2a_algorithm": R2ABuffer ",
-nenhuma outra informação neste arquivo ou na plataforma pyDash deve ser mudada.
+ou " "r2a_algorithm": R2ABuffer1 ".
 
 Para executar o algoritmo, execute 'main.py'.
