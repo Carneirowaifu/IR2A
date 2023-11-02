@@ -58,11 +58,11 @@ class R2ABuffer1(IR2A):
 
         # Salva o safetyNumber na variavel local
         sftnumber = self.safetyNumber
-        # Se o tamanho do buffer carregado for menor ou igual a 5
-        if self.bufferSize <= 5:
+        # Se o tamanho do buffer carregado for igual a 0
+        if self.bufferSize == 0:
             self.currentQuality = 0  # Qualidade de transmissao 0
             self.safetyNumber += 2.5  # Aumenta o safetyNumber para deixar o codigo mais conservador
-        # Se o tamanho de buffer carregado for maior que 5
+        # Se o tamanho de buffer carregado for maior que 0
         else:
             # Salva o tamanho do chunkMap - 1 numa variavel local
             chkmapsize = len(self.chunkMap) - 1
@@ -76,8 +76,8 @@ class R2ABuffer1(IR2A):
                     if g == chkmapsize:
                         # Qualidade de transmissao maxima
                         self.currentQuality = chkmapsize
-                        # Se o safetyNumber for maior ou igual a 4
-                        if sftnumber >= 4:
+                        # Se o safetyNumber - 3 for maior ou igual a 2
+                        if sftnumber - 3 >= 2:
                             self.safetyNumber -= 3  # Diminui o safetyNumber em 3
                     # Se o indice do loop for menor que o comprimento da lista chunkMap
                     else:
@@ -85,51 +85,54 @@ class R2ABuffer1(IR2A):
                         bufferrate = self.bufferSize / self.bufferMaxSize
                         # Se a porcentagem de buffer ocupado for <= que 10%
                         if bufferrate <= 0.1:
-                            self.safetyNumber += 2  # Aumenta safetyNumber em 2
+                            # Se o safety number + 0.25 <= 50
+                            if sftnumber + 0.25 <= 50:
+                                self.safetyNumber += 2  # Aumenta safetyNumber em 2
                         # Se a porcentagem de buffer ocupado for <= que 20%
                         elif bufferrate <= 0.2:
-                            self.safetyNumber += 1  # Aumenta safetyNumber em 1
+                            # Se o safety number + 1 <= 50
+                            if sftnumber + 1 <= 50:
+                                self.safetyNumber += 1  # Aumenta safetyNumber em 1
                         # Se a porcentagem de buffer ocupado for <= que 30%
                         elif bufferrate <= 0.3:
-                            self.safetyNumber += 0.5  # Aumenta safetyNumber em 0.5
+                            # Se o safety number + 0.5 <= 50
+                            if sftnumber + 0.5 <= 50:
+                                self.safetyNumber += 0.5  # Aumenta safetyNumber em 0.5
                         # Se a porcentagem de buffer ocupado for <= que 40%
                         elif bufferrate <= 0.4:
-                            self.safetyNumber += 0.25  # Aumenta safetyNumber em 0.25
+                            # Se o safety number + 0.25 <= 50
+                            if sftnumber + 0.25 <= 50:
+                                self.safetyNumber += 0.25  # Aumenta safetyNumber em 0.25
                         # Se a porcentagem de buffer ocupado for >= que 90%
                         elif bufferrate >= 0.9:
-                            # Se o safetyNumber - 3 for >= 0.5
-                            if sftnumber - 3 >= 0.5:
+                            # Se o safetyNumber - 3 for >= 2
+                            if sftnumber - 3 >= 2:
                                 self.safetyNumber -= 3  # Diminui o safetyNumber em 3
-                                # Se a qualidade atual for menor que a maxima
-                                if self.currentQuality < len(self.qi) - 1:
-                                    # Qualidade maxima
-                                    self.currentQuality = len(self.qi) - 1
-                                    break
                         # Se a porcentagem de buffer ocupado for >= que 80%
                         elif bufferrate >= 0.8:
-                            # Se o safetyNumber - 2 for >= 0.5
-                            if sftnumber - 2 >= 0.5:
+                            # Se o safetyNumber - 2 for >= 2
+                            if sftnumber - 2 >= 2:
                                 self.safetyNumber -= 2  # Diminui o safetyNumber em 2
                                 self.currentQuality = indiceinverso
                                 break
                         # Se a porcentagem de buffer ocupado for >= que 70%
                         elif bufferrate >= 0.7:
-                            # Se o safetyNumber - 1 for >= que 0.5
-                            if sftnumber - 1 >= 0.5:
+                            # Se o safetyNumber - 1 for >= que 2
+                            if sftnumber - 1 >= 2:
                                 self.safetyNumber -= 1  # Diminui o safetyNumber em 1
                                 self.currentQuality = indiceinverso
                                 break
                         # Se a porcentagem de buffer ocupado for >= que 60%
                         elif bufferrate >= 0.6:
-                            # Se o safetyNumber - 0.50 for >= que 0.5
-                            if sftnumber - 0.5 >= 0.5:
+                            # Se o safetyNumber - 0.50 for >= que 2
+                            if sftnumber - 0.5 >= 2:
                                 self.safetyNumber -= 0.50  # Diminui o safetyNumber em 0.5
                                 self.currentQuality = indiceinverso
                                 break
                         # Se a porcentagem de buffer ocupado for >= que 50%
                         elif bufferrate >= 0.5:
-                            # Se o safetyNumber - 0.25 for >= que 0.5
-                            if sftnumber - 0.25 >= 0.5:
+                            # Se o safetyNumber - 0.25 for >= que 2
+                            if sftnumber - 0.25 >= 2:
                                 self.safetyNumber -= 0.25  # Diminui o safetyNumber em 0.25
                                 self.currentQuality = indiceinverso
                                 break
