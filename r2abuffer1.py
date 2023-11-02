@@ -86,7 +86,7 @@ class R2ABuffer1(IR2A):
                         # Se a porcentagem de buffer ocupado for <= que 10%
                         if bufferrate <= 0.1:
                             # Se o safety number + 0.25 <= 50
-                            if sftnumber + 0.25 <= 50:
+                            if sftnumber + 2 <= 50:
                                 self.safetyNumber += 2  # Aumenta safetyNumber em 2
                         # Se a porcentagem de buffer ocupado for <= que 20%
                         elif bufferrate <= 0.2:
