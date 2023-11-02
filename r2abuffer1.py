@@ -28,7 +28,6 @@ class R2ABuffer1(IR2A):
         self.bufferSize = 0  # Tamanho de buffer ocupado
         self.bufferMaxSize = 0  # Tamanho de buffer maximo
         self.timeLastRequest = 0  # Tempo da ultima request
-        self.deltaTimeLastRequest = 0  # Diferenca entre o tempo de request e response
         self.lastChunkTime = 0  # Tempo de transmissao do ultimo chunk
         self.lastChunkSize = 0  # Tamanho do ultimo chunk
         self.transmissionRate = 0  # Taxa de transmissão do ultimo chunk
