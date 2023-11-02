@@ -72,22 +72,13 @@ class R2ABuffer1(IR2A):
                 indiceinverso = chkmapsize - g
                 # Se o tamanho de buffer carregado for maior que o safetyNumber * o tempo do chunkMap
                 if self.bufferSize > self.chunkMap[indiceinverso]:
-                    # Se o indice do loop g for igual ao comprimento da lista chunkMap
-                    if g == chkmapsize:
-                        # Qualidade de transmissao maxima
-                        self.currentQuality = chkmapsize
-                        # Se o safetyNumber - 3 for maior ou igual a 2
-                        if sftnumber - 3 >= 2:
-                            self.safetyNumber -= 3  # Diminui o safetyNumber em 3
-                    # Se o indice do loop for menor que o comprimento da lista chunkMap
-                    else:
-                        # Salva a taxa de buffer ocupado na variavel local bufferrate
-                        bufferrate = self.bufferSize / self.bufferMaxSize
-                        # Se a porcentagem de buffer ocupado for <= que 10%
-                        if bufferrate <= 0.1:
-                            # Se o safety number + 0.25 <= 50
-                            if sftnumber + 2 <= 50:
-                                self.safetyNumber += 2  # Aumenta safetyNumber em 2
+                    # Salva a taxa de buffer ocupado na variavel local bufferrate
+                    bufferrate = self.bufferSize / self.bufferMaxSize
+                    # Se a porcentagem de buffer ocupado for <= que 10%
+                    if bufferrate <= 0.1:
+                        # Se o safety number + 0.25 <= 50
+                        if sftnumber + 2 <= 50:
+                            self.safetyNumber += 2  # Aumenta safetyNumber em 2
                         # Se a porcentagem de buffer ocupado for <= que 20%
                         elif bufferrate <= 0.2:
                             # Se o safety number + 1 <= 50
