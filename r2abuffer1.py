@@ -33,11 +33,12 @@ class R2ABuffer1(IR2A):
         self.transmissionRate = 0  # Taxa de transmissão do ultimo chunk
         self.chunkMap = []  # Mapa de chunks
         self.timer = Timer.get_instance()  # Tempo
-        self.safetyNumber = 1  # Numero de seguranca para ajuste do algoritmo
+        self.safetyNumber = 0  # Numero de seguranca para ajuste do algoritmo
 
     def handle_xml_request(self, msg):
         # Salva o tamanho maximo de buffer na variavel bufferMaxSize
         self.bufferMaxSize = Whiteboard.get_max_buffer_size(self.whiteboard)
+        print("Tamanho Maximo buffer = ", self.bufferMaxSize)
         self.send_down(msg)
 
     def handle_xml_response(self, msg):
@@ -49,96 +50,44 @@ class R2ABuffer1(IR2A):
     def handle_segment_size_request(self, msg):
         # Salva o tamanho de buffer na variavel Buffersize
         self.bufferSize = Whiteboard.get_amount_video_to_play(self.whiteboard)
+
         # Salva o tempo atual de execucao do codigo na variavel local currenttime
         currenttime = self.timer.get_current_time()
-
-        # --- LOGICA PRINCIPAL ---
-
 
         # Salva o safetyNumber na variavel local
         sftnumber = self.safetyNumber
 
+        # Salva a qualidade atual na variavel local
+        currquality = self.currentQuality
+
+        # --- LOGICA PRINCIPAL ---
+
         # Se o tamanho do buffer carregado for menor ou igual a 5
         if self.bufferSize <= 5:
             self.currentQuality = 0  # Qualidade de transmissao 0
-            self.safetyNumber += 2.5  # Aumenta o safetyNumber para deixar o codigo mais conservador
+            if sftnumber + 2.5 <= 50:
+                self.safetyNumber += 2.5  # Aumenta o safetyNumber para deixar o codigo mais conservador
+        elif self.bufferSize / self.bufferMaxSize >= 0.95:
+            self.currentQuality = len(self.qi) - 1
         # Se o tamanho de buffer carregado for maior que 5
         else:
             # Salva o tamanho do chunkMap - 1 numa variavel local
-            chkmapsize = len(self.chunkMap) - 1
+            chkmapsize = len(self.chunkMap)
             # Loop inverso do chunkMap, comeca pelo ultimo valor do chunkMap
             for g in range(chkmapsize):
                 # Salva o indice inverso na variavel indice inverso
-                indiceinverso = chkmapsize - g
+                indiceinverso = chkmapsize - g - 1
                 # Se o tamanho de buffer carregado for maior que o safetyNumber * o tempo do chunkMap:
                 if self.bufferSize > self.chunkMap[indiceinverso]:
-                    # Se o indice do loop g for igual ao comprimento da lista chunkMap
-                    if g == chkmapsize:
-                        # Qualidade de transmissao maxima
-                        self.currentQuality = chkmapsize
-                        # Se o safetyNumber for maior ou igual a 4
-                        if sftnumber >= 4:
-                            self.safetyNumber -= 3  # Diminui o safetyNumber em 3
-                    # Se o indice do loop for menor que o comprimento da lista chunkMap
-                    else:
-                        # Salva a taxa de buffer ocupado na variavel local bufferrate
-                        bufferrate = self.bufferSize / self.bufferMaxSize
-                        # Se a porcentagem de buffer ocupado for <= que 10%
-                        if self.bufferSize / self.bufferMaxSize <= 0.1:
-                            self.safetyNumber += 2  # Aumenta safetyNumber em 2
-                        # Se a porcentagem de buffer ocupado for <= que 20%
-                        elif bufferrate <= 0.2:
-                            self.safetyNumber += 1  # Aumenta safetyNumber em 1
-                        # Se a porcentagem de buffer ocupado for <= que 30%
-                        elif bufferrate <= 0.3:
-                            self.safetyNumber += 0.5  # Aumenta safetyNumber em 0.5
-                        # Se a porcentagem de buffer ocupado for <= que 40%
-                        elif bufferrate <= 0.4:
-                            self.safetyNumber += 0.25  # Aumenta safetyNumber em 0.25
-                        # Se a porcentagem de buffer ocupado for >= que 90%
-                        elif bufferrate >= 0.9:
-                            # Se o safetyNumber - 3 for >= 0.5
-                            if sftnumber - 3 >= 0.5:
-                                self.safetyNumber -= 3  # Diminui o safetyNumber em 3
-                                # Se a qualidade atual for menor que a maxima
-                                if self.currentQuality < len(self.qi) - 1:
-                                    # Qualidade maxima
-                                    self.currentQuality = len(self.qi) - 1
-                                    break
-                        # Se a porcentagem de buffer ocupado for >= que 80%
-                        elif bufferrate >= 0.8:
-                            # Se o safetyNumber - 2 for >= 0.5
-                            if sftnumber - 2 >= 0.5:
-                                self.safetyNumber -= 2  # Diminui o safetyNumber em 2
-                                self.currentQuality = indiceinverso
-                                break
-                        # Se a porcentagem de buffer ocupado for >= que 70%
-                        elif bufferrate >= 0.7:
-                            # Se o safetyNumber - 1 for >= que 0.5
-                            if sftnumber - 1 >= 0.5:
-                                self.safetyNumber -= 1  # Diminui o safetyNumber em 1
-                                self.currentQuality = indiceinverso
-                                break
-                        # Se a porcentagem de buffer ocupado for >= que 60%
-                        elif bufferrate >= 0.6:
-                            # Se o safetyNumber - 0.50 for >= que 0.5
-                            if sftnumber - 0.5 >= 0.5:
-                                self.safetyNumber -= 0.50  # Diminui o safetyNumber em 0.5
-                                self.currentQuality = indiceinverso
-                                break
-                        # Se a porcentagem de buffer ocupado for >= que 50%
-                        elif bufferrate >= 0.5:
-                            # Se o safetyNumber - 0.25 for >= que 0.5
-                            if sftnumber - 0.25 >= 0.5:
-                                self.safetyNumber -= 0.25  # Diminui o safetyNumber em 0.25
-                                self.currentQuality = indiceinverso
-                                break
-                        self.currentQuality = indiceinverso
-                        break
+                    self.currentQuality = indiceinverso
+                    break
+                # Se todos os elementos do chunkMap forem comparados e o loop nao foi quebrado
+                elif indiceinverso == 0 and self.bufferSize < self.chunkMap[0]:
+                    self.currentQuality = 0  # Seleciona a qualidade minima
 
         # Informacoes uteis
+        # print("Quality List = ", self.qi)
         # print("SafetyNumber = ", self.safetyNumber)
-        # print("ChunkMap = ", self.chunkMap)
         # print("LastChunkTime = ", self.lastChunkTime)
         # print("LastChunkSize = ", self.lastChunkSize)
 
@@ -148,12 +97,61 @@ class R2ABuffer1(IR2A):
         # Salva o tempo atual como tempo de ultimo request
         self.timeLastRequest = time.perf_counter()
         self.send_down(msg)
+
     def handle_segment_size_response(self, msg):
         # Salva o tempo de download do ultimo chunk na variavel lastChunktime
         self.lastChunkTime = time.perf_counter() - self.timeLastRequest
 
         # Salva o tamanho do ultimo chunk e salva na variavel lastChunkSize
         self.lastChunkSize = msg.get_bit_length()
+
+        # Salva o safetyNumber na variavel local
+        sftnumber = self.safetyNumber
+
+        # Salva a taxa de buffer ocupado na variavel local bufferrate
+        bufferrate = self.bufferSize / self.bufferMaxSize
+        # Se a porcentagem de buffer ocupado for <= que 10%
+        if self.bufferSize / self.bufferMaxSize <= 0.1:
+            if sftnumber + 2 <= 50:
+                self.safetyNumber += 2  # Aumenta safetyNumber em 2
+        # Se a porcentagem de buffer ocupado for <= que 20%
+        elif bufferrate <= 0.2:
+            if sftnumber + 1 <= 50:
+                self.safetyNumber += 1  # Aumenta safetyNumber em 1
+        # Se a porcentagem de buffer ocupado for <= que 30%
+        elif bufferrate <= 0.3:
+            if sftnumber + 0.5 <= 50:
+                self.safetyNumber += 0.5  # Aumenta safetyNumber em 0.5
+        # Se a porcentagem de buffer ocupado for <= que 40%
+        elif bufferrate <= 0.4:
+            if sftnumber + 0.25 <= 50:
+                self.safetyNumber += 0.25  # Aumenta safetyNumber em 0.25
+        # Se a porcentagem de buffer ocupado for >= que 90%
+        elif bufferrate >= 0.9:
+            # Se o safetyNumber - 3 for >= 2.5
+            if sftnumber - 3 >= 2.5:
+                self.safetyNumber -= 3  # Diminui o safetyNumber em 3
+                # Se a qualidade atual for menor que a maxima
+        # Se a porcentagem de buffer ocupado for >= que 80%
+        elif bufferrate >= 0.8:
+            # Se o safetyNumber - 2 for >= 2.5
+            if sftnumber - 2 >= 2.5:
+                self.safetyNumber -= 2  # Diminui o safetyNumber em 2
+        # Se a porcentagem de buffer ocupado for >= que 70%
+        elif bufferrate >= 0.7:
+            # Se o safetyNumber - 1 for >= que 2.5
+            if sftnumber - 1 >= 2.5:
+                self.safetyNumber -= 1  # Diminui o safetyNumber em 1
+        # Se a porcentagem de buffer ocupado for >= que 60%
+        elif bufferrate >= 0.6:
+            # Se o safetyNumber - 0.50 for >= que 2.5
+            if sftnumber - 0.5 >= 2.5:
+                self.safetyNumber -= 0.50  # Diminui o safetyNumber em 0.5
+        # Se a porcentagem de buffer ocupado for >= que 50%
+        elif bufferrate >= 0.5:
+            # Se o safetyNumber - 0.25 for >= que 2.5
+            if sftnumber - 0.25 >= 2.5:
+                self.safetyNumber -= 0.25  # Diminui o safetyNumber em 0.25
 
         # --- CHUNKMAP ---
         # Se o tamanho do ultimo chunk for maior que 0
@@ -174,18 +172,15 @@ class R2ABuffer1(IR2A):
                     # Adiciona o tempo de download do ultimo chunk multiplicado pelo safetyNumber
                     # ao chunkMap na posicao 0
                     self.chunkMap.append(self.lastChunkTime * sftnumber)
-                # Se o indice t for menor que o comprimento da lista de qualidades e diferente do tamanho maximo
-                elif t < len(self.qi) and t != len(self.qi) - 1:
-                    # Formula (Qt+1) * (Tt-1) / Qt    Q = qualidade T = Tempo no chunkmap t = indice
-                    # Adiciona ao chunkMap o tempo para baixar o chunk de uma qualidade abaixo
-                    # multiplicado pela qualidade do proximo chunk divido pela qualidade do chunk t.
-                    self.chunkMap.append((self.qi[t+1] * self.chunkMap[t-1]) / self.qi[t])
-                # Se o indice t for igual ao comprimento da lista de qualidades
                 else:
-                    # Adiciona ao ChunkMap o tempo necessario para baixar o chunk de maior qualidade
-                    # multiplicado pelo tempo necessario para baixar o chunk uma qualidade abaixo
-                    # dividido pela qualidade abaixo
+                    # Adiciona a proporcao de tempo de download de cada qualidade multiplicado
+                    # pelo safety number.
+                    # A Formula eh: Q(t) * T(t-1) / Q(t-1)
+                    # Q(t) = tamanho medio do chunk da qualidade t
+                    # T(t-1) = Tempo necessario para baixar o chunk da qualidade inferior
+                    # Q(t-1) =  tamanho medio de chunk da qualidade t-1
                     self.chunkMap.append((self.qi[t]) * self.chunkMap[t-1] / self.qi[t-1])
+        # print("ChunkMap = ", self.chunkMap)
 
         self.send_up(msg)
 
