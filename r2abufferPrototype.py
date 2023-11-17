@@ -18,7 +18,7 @@ from base.whiteboard import *
 import time
 
 
-class R2ABuffer(IR2A):
+class R2ABufferPrototype(IR2A):
     def __init__(self, id):
         # DECLARACAO DE VALORES
         IR2A.__init__(self, id)
