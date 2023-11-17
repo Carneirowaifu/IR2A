@@ -13,6 +13,8 @@ Lucas Silva Carneiro 21/1026655
 Hudson Caua Costa Lima 21/1055512
 Davy Viana Guimaraes 21/1055559
 
+É preferencial que o usuário utilize o IDE PyCharm para executar o código.
+
 Algoritmo utiliza a plataforma PyDash https://github.com/mfcaetano/pydash
 
 Para utilizar o algoritmo, deve-se obter a plataforma pyDash pelo link acima.
